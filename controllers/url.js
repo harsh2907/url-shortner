@@ -5,13 +5,21 @@ async function handleCreateShortUrl(req, res) {
   try{
     const body = req.body;
     console.log(body);
-    const originalUrl = body.url;
+    let originalUrl = body.url.trim();
 
     const { nanoid } = await import('nanoid');
   
     if (!originalUrl) {
       return res.status(400).json({ error: "Url is needed to be shorten" });
     }
+
+    if (
+      !originalUrl.startsWith("http://") &&
+      !originalUrl.startsWith("https://")
+    ) {
+      originalUrl = "http://" + originalUrl;
+    }
+
   
     const shortId = nanoid(8);
     await URL.create({
@@ -20,7 +28,8 @@ async function handleCreateShortUrl(req, res) {
       visitHistory: []
     });
   
-    return res.json({ status: "Success", shortId: shortId });
+    //return res.json({ status: "Success", shortId: shortId });
+    return res.render('home',{ shortId: shortId });
   }catch(err){
     console.log('Error Generating Url',err);
     return res.status(500).json({ error: "Cannot generate url, please try again."})

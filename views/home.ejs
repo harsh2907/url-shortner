@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+    <style>
+      body {
+        background-color: #121212;
+        color: #fff;
+        font-family: "Roboto", sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      h1 {
+        margin-bottom: 20px;
+        font-size: 42px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #ff9800;
+        animation: fadeInDown 1s ease-in-out;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        width: 350px;
+        padding: 30px;
+        border-radius: 12px;
+        background-color: #1c1c1c;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        animation: fadeInUp 1s ease-in-out;
+      }
+      label {
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #ff9800;
+      }
+      input {
+        padding: 12px;
+        font-size: 16px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 2px solid #333;
+        background-color: #222;
+        color: #fff;
+        transition: border 0.3s ease;
+      }
+      input:focus {
+        border: 2px solid #ff9800;
+        outline: none;
+      }
+      button {
+        padding: 12px;
+        background-color: #ff9800;
+        color: #000;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+        margin-top: 10px;
+      }
+      button:hover {
+        background-color: #ffb74d;
+      }
+      button:disabled {
+        background-color: #666;
+        cursor: not-allowed;
+      }
+      #spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid #ff9800;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+        display: none;
+      }
+      .short-url-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #1c1c1c;
+        border-radius: 8px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.5s ease-in-out;
+      }
+      .short-url {
+        font-size: 18px;
+        margin-right: 10px;
+        color: #ff9800;
+      }
+      .copy-btn {
+        padding: 8px 16px;
+        background-color: #ff9800;
+        color: #000;
+        border-radius: 8px;
+        cursor: pointer;
+        border: none;
+        transition: background-color 0.3s ease;
+      }
+      .copy-btn:hover {
+        background-color: #ffb74d;
+      }
+      .toast {
+        background-color: #333;
+        color: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>URL Shortener</h1>
+    <form method="POST" action="/url">
+      <label>Enter your original url</label>
+      <input
+        type="text"
+        id="urlInput"
+        name="url"
+        placeholder="https://example.com"
+      />
+      <button id="shortenBtn" disabled type="submit">Shorten URL</button>
+    </form>
+    <div id="spinner"></div>
+
+    <% if (shortId) { %>
+    <div class="short-url-container" id="shortUrlContainer">
+      <span class="short-url" id="shortUrl"
+        >https://url-shortner-qi9n.onrender.com/url/<%= shortId %></span
+      >
+      <button class="copy-btn" onclick="copyShortUrl()">Copy</button>
+    </div>
+    <% } %>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const urlInput = document.getElementById("urlInput");
+      const shortenBtn = document.getElementById("shortenBtn");
+      const spinner = document.getElementById("spinner");
+      const toast = document.getElementById("toast");
+
+      // Validate the URL when input changes
+      urlInput.addEventListener("input", () => {
+        const urlValue = urlInput.value.trim();
+        const isValid = validateUrl(urlValue);
+        shortenBtn.disabled = !isValid;
+      });
+ 
+      function validateUrl(value) {
+        const urlPattern = new RegExp(
+          "^(https?:\\/\\/)?" + // Ensure the URL starts with http:// or https://
+            "((([a-zA-Z0-9$_.+!*',;?&=-])|([a-zA-Z0-9$_.+!*',;?&=-])+([a-zA-Z0-9$_.+!*',;?&=-]+)*)" +
+            "(\\.[a-zA-Z]{2,5})+)(:[0-9]{1,5})?(\\/.*)?$"
+        );
+        return urlPattern.test(value);
+      }
+
+      function copyShortUrl() {
+        const shortUrlSpan = document.getElementById("shortUrl");
+        navigator.clipboard.writeText(shortUrlSpan.textContent);
+        showToast("Shortened URL copied!");
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.style.display = "block";
+        setTimeout(() => {
+          toast.style.display = "none";
+        }, 3000);
+      }
+    </script>
+
+    <!-- Include Axios from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </body>
+</html>
