@@ -8,7 +8,6 @@ const staticRouter = require('./routes/staticRouter')
 const {connectMongoDb} = require('./connection');
 const exp = require('constants');
 
-
 const PORT = process.env.PORT || 3000;
 const MONGO_URL = process.env.MONGO_URL;
  

@@ -30,6 +30,7 @@ async function handleCreateShortUrl(req, res) {
   
     //return res.json({ status: "Success", shortId: shortId });
     return res.render('home',{ shortId: shortId });
+    
   }catch(err){
     console.log('Error Generating Url',err);
     return res.status(500).json({ error: "Cannot generate url, please try again."})
@@ -39,6 +40,7 @@ async function handleCreateShortUrl(req, res) {
 
 async function redirectToOriginalUrl(req,res) {
   try{
+
     const shortId = req.params.shortId;
     const result = await URL.findOneAndUpdate({shortId},{
       $push:{
